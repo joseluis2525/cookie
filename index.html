@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <title>Pssst - ZX Spectrum</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            font-family: Arial, sans-serif; background: #000; color: #fff;
+            overflow: hidden; width: 100%; height: 100%;
+            touch-action: none; user-select: none; -webkit-user-select: none;
+        }
+
+        #app {
+            display: flex; flex-direction: column;
+            width: 100vw; height: 100vh;
+        }
+
+        /* ============ CABECERA ============ */
+        #game-header {
+            text-align: center; padding: 4px 8px;
+            background: #111; border-bottom: 2px solid #4caf50;
+            display: flex; align-items: center; gap: 5px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+        #game-header h1 { font-size: 0.9em; color: #4caf50; margin: 0; white-space: nowrap; }
+        #status { font-size: 0.6em; color: #aaa; flex: 1; text-align: center; }
+        .hdr-btn {
+            background: #333; border: 1px solid #4caf50; border-radius: 5px;
+            color: #4caf50; padding: 5px 10px; font-size: 0.7em; cursor: pointer;
+            user-select: none; flex-shrink: 0; white-space: nowrap;
+        }
+        .hdr-btn:active { background: #4caf50; color: #000; }
+
+        /* ============ EMULADOR ============ */
+        #emulator-container {
+            flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
+            background: #000; overflow: hidden; min-height: 0; position: relative;
+        }
+        #jsspeccy {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #jsspeccy canvas {
+            max-width: 100%; max-height: 100%;
+            width: auto !important; height: auto !important;
+            image-rendering: pixelated;
+            outline: none;
+        }
+
+        /* ============ GAMEPAD PORTRAIT ============ */
+        #gamepad-area {
+            position: relative;
+            flex-shrink: 0;
+            background: #1a1a2e;
+            padding: 10px 15px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .controls-left,
+        .controls-right {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pill-horizontal { display: flex; flex-direction: row; }
+        .pill-vertical   { display: flex; flex-direction: column; }
+
+        .btn-half {
+            background-color: transparent;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            border: none;
+            padding: 0;
+        }
+
+        #btn-left  { background-image: url('lft.png'); }
+        #btn-right { background-image: url('rgt.png'); }
+        #btn-up    { background-image: url('up.png'); }
+        #btn-down  { background-image: url('dwn.png'); }
+
+        #btn-left.active  { background-image: url('lftaction.png') !important; }
+        #btn-right.active { background-image: url('rgtaction.png') !important; }
+        #btn-up.active    { background-image: url('upaction.png') !important; }
+        #btn-down.active  { background-image: url('dwnaction.png') !important; }
+
+        .btn-action-round {
+            background-color: transparent;
+            background-image: url('disp.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border: none;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            padding: 0;
+        }
+        .btn-action-round.active { background-image: url('dispction.png') !important; }
+
+        /* Botón START 5 (amarillo) */
+        #btn-start {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #f0c040;
+            border: 3px solid #a08020;
+            border-radius: 50%;
+            color: #000;
+            font-weight: bold;
+            font-size: 1.3em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            width: 52px;
+            height: 52px;
+            z-index: 10;
+            box-shadow: 0 0 8px rgba(240,192,64,0.6);
+        }
+        #btn-start:active, #btn-start.active {
+            background: #a08020;
+            color: #fff;
+            transform: translate(-50%, -50%) scale(0.92);
+        }
+
+        /* ============ TAMAÑOS PORTRAIT ============ */
+        .pill-horizontal .btn-half { width: 58px; height: 58px; }
+        .pill-vertical   .btn-half { width: 58px; height: 58px; }
+        .btn-action-round { width: 68px; height: 68px; }
+
+        /* ============ LANDSCAPE ============ */
+        @media (orientation: landscape) {
+
+            #game-header { display: none !important; }
+
+            #emulator-container {
+                position: fixed !important;
+                top: 0 !important; left: 0 !important;
+                width: 100vw !important;
+                height: 100dvh !important;
+                z-index: 1 !important;
+                padding: 0 !important;
+            }
+            #jsspeccy {
+                width: 100vw !important;
+                height: 100dvh !important;
+                display: block !important;
+            }
+            #jsspeccy canvas {
+                width: 100vw !important;
+                height: 100dvh !important;
+                max-width: none !important;
+                max-height: none !important;
+                object-fit: contain;
+                display: block;
+            }
+
+            #jsspeccy > div > div:first-child,
+            #jsspeccy > div > div:last-child,
+            #jsspeccy .jsspeccy-menu,
+            #jsspeccy .jsspeccy-toolbar,
+            #jsspeccy > div > div:not(:has(canvas)) {
+                display: none !important;
+            }
+
+            #gamepad-area {
+                position: fixed !important;
+                top: 0 !important; left: 0 !important;
+                width: 100vw !important;
+                height: 100dvh !important;
+                background: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+                z-index: 9999 !important;
+                display: block !important;
+            }
+
+            /* IZQUIERDA */
+            .controls-left {
+                position: fixed !important;
+                left: 1.5vw !important;
+                top: 0 !important; bottom: 0 !important;
+                height: 100dvh !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 2vh !important;
+                z-index: 10000 !important;
+                pointer-events: auto !important;
+            }
+
+            /* DERECHA */
+            .controls-right {
+                position: fixed !important;
+                right: 1.5vw !important;
+                left: auto !important;
+                top: 0 !important; bottom: 0 !important;
+                height: 100dvh !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 2vh !important;
+                z-index: 10000 !important;
+                pointer-events: auto !important;
+            }
+
+            /* TAMAÑOS EN LANDSCAPE */
+            .pill-horizontal .btn-half,
+            .pill-vertical .btn-half {
+                width: min(9vw, 70px) !important;
+                height: min(9vw, 70px) !important;
+            }
+            .btn-action-round {
+                width: min(11vw, 85px) !important;
+                height: min(11vw, 85px) !important;
+            }
+
+            /* Botón START arriba centrado en landscape */
+            #btn-start {
+                position: fixed !important;
+                left: 50% !important;
+                top: 1.5vh !important;
+                transform: translateX(-50%) !important;
+                width: min(9vh, 55px) !important;
+                height: min(9vh, 55px) !important;
+                z-index: 10001 !important;
+                pointer-events: auto !important;
+                font-size: 1.1em !important;
+            }
+            #btn-start:active, #btn-start.active {
+                transform: translateX(-50%) scale(0.92) !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+
+        <div id="game-header">
+            <h1>🐛 Pssst</h1>
+            <div id="status">Iniciando...</div>
+            <label for="manual-load" class="hdr-btn">ROM</label>
+            <input type="file" id="manual-load" accept=".tap" style="display:none;">
+        </div>
+
+        <div id="emulator-container">
+            <div id="jsspeccy"></div>
+        </div>
+
+        <div id="gamepad-area">
+
+            <div class="controls-left">
+                <div class="pill-horizontal">
+                    <!-- ← izquierda = Q, → derecha = W -->
+                    <div id="btn-left"  class="btn-half" data-key="q"></div>
+                    <div id="btn-right" class="btn-half" data-key="w"></div>
+                </div>
+                <!-- ACCION = T (fuego) -->
+                <div id="btn-disp-left" class="btn-action-round" data-key="t"></div>
+            </div>
+
+            <div class="controls-right">
+                <div class="pill-vertical">
+                    <!-- ↑ arriba = R, ↓ abajo = E (intercambiado, como confirmamos) -->
+                    <div id="btn-up"   class="btn-half" data-key="e"></div>
+                    <div id="btn-down" class="btn-half" data-key="r"></div>
+                </div>
+                <!-- ACCION = T (fuego) -->
+                <div id="btn-disp-right" class="btn-action-round" data-key="t"></div>
+            </div>
+
+            <!-- Botón START (5) -->
+            <div id="btn-start" data-key="5">5</div>
+
+        </div>
+
+    </div>
+
+    <script src="jsspeccy/jsspeccy.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const statusEl = document.getElementById('status');
+            const manualLoadInput = document.getElementById('manual-load');
+
+            let tapeLoaded = false;
+            let typing = false;
+
+            function setStatus(msg) {
+                statusEl.textContent = msg;
+                console.log('[STATUS]', msg);
+            }
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+            const speccy = JSSpeccy(document.getElementById('jsspeccy'), {
+                autoStart: true,
+                sandbox: false,
+                machine: 48,
+                zoom: 1
+            });
+
+            function getCanvas() {
+                return document.querySelector('#jsspeccy canvas');
+            }
+
+            function hideEmulatorUI() {
+                const container = document.getElementById('jsspeccy');
+                const canvas = container.querySelector('canvas');
+                if (!canvas) return;
+                container.querySelectorAll('*').forEach(el => {
+                    if (el === canvas) return;
+                    if (el.contains(canvas)) return;
+                    if (el.tagName === 'CANVAS') return;
+                    el.style.display = 'none';
+                });
+                if (canvas.parentNode) {
+                    Array.from(canvas.parentNode.children).forEach(el => {
+                        if (el !== canvas) el.style.display = 'none';
+                    });
+                }
+            }
+
+            function forceReflow() {
+                const app = document.getElementById('app');
+                const prev = app.style.display;
+                app.style.display = 'none';
+                void app.offsetHeight;
+                app.style.display = prev || '';
+            }
+
+            function onOrientationChange() {
+                const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+                if (isLandscape) {
+                    if (speccy && typeof speccy.enterFullscreen === 'function') {
+                        try { speccy.enterFullscreen(); } catch(e) {}
+                    }
+                    setTimeout(() => { hideEmulatorUI(); forceReflow(); }, 200);
+                    setTimeout(hideEmulatorUI, 600);
+                } else {
+                    if (speccy && typeof speccy.exitFullscreen === 'function') {
+                        try { speccy.exitFullscreen(); } catch(e) {}
+                    }
+                    forceReflow();
+                }
+            }
+
+            window.addEventListener('orientationchange', () => setTimeout(onOrientationChange, 400));
+            window.addEventListener('resize', () => setTimeout(onOrientationChange, 400));
+
+            async function loadTape(blob, filename) {
+                try {
+                    const file = new File([blob], filename, { type: 'application/octet-stream' });
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    const dropEvent = new DragEvent('drop', {
+                        bubbles: true, cancelable: true, dataTransfer: dt
+                    });
+                    document.getElementById('jsspeccy').dispatchEvent(dropEvent);
+                    const canvas = getCanvas();
+                    if (canvas) canvas.dispatchEvent(dropEvent);
+                    document.dispatchEvent(dropEvent);
+                    tapeLoaded = true;
+                    setStatus('✅ Cinta insertada');
+                    return true;
+                } catch (err) {
+                    setStatus('❌ Error: ' + err.message);
+                    return false;
+                }
+            }
+
+            function pressKey(key, code, keyCode, extraOpts) {
+                const canvas = getCanvas();
+                if (!canvas) return;
+                const opts = Object.assign({
+                    key: key, code: code, keyCode: keyCode, which: keyCode,
+                    bubbles: true, cancelable: true
+                }, extraOpts || {});
+
+                const down = new KeyboardEvent('keydown', opts);
+                const up = new KeyboardEvent('keyup', opts);
+
+                Object.defineProperty(down, 'keyCode', { get: () => keyCode });
+                Object.defineProperty(down, 'which', { get: () => keyCode });
+                Object.defineProperty(up, 'keyCode', { get: () => keyCode });
+                Object.defineProperty(up, 'which', { get: () => keyCode });
+
+                canvas.dispatchEvent(down);
+                document.dispatchEvent(down);
+                window.dispatchEvent(down);
+                setTimeout(() => {
+                    canvas.dispatchEvent(up);
+                    document.dispatchEvent(up);
+                    window.dispatchEvent(up);
+                }, 60);
+            }
+
+            async function pressSymbolShift(letter, code, keyCode) {
+                const canvas = getCanvas();
+                if (!canvas) return;
+                const ssDown = new KeyboardEvent('keydown', {
+                    key: 'Control', code: 'ControlLeft', keyCode: 17, which: 17,
+                    ctrlKey: true, bubbles: true, cancelable: true
+                });
+                Object.defineProperty(ssDown, 'keyCode', { get: () => 17 });
+                Object.defineProperty(ssDown, 'which', { get: () => 17 });
+                canvas.dispatchEvent(ssDown);
+                document.dispatchEvent(ssDown);
+                await sleep(120);
+                pressKey(letter, code, keyCode, { ctrlKey: true });
+                await sleep(150);
+                const ssUp = new KeyboardEvent('keyup', {
+                    key: 'Control', code: 'ControlLeft', keyCode: 17, which: 17,
+                    ctrlKey: false, bubbles: true, cancelable: true
+                });
+                Object.defineProperty(ssUp, 'keyCode', { get: () => 17 });
+                Object.defineProperty(ssUp, 'which', { get: () => 17 });
+                canvas.dispatchEvent(ssUp);
+                document.dispatchEvent(ssUp);
+                await sleep(120);
+            }
+
+            async function typeLoadCommand() {
+                if (typing) return;
+                typing = true;
+                setStatus('⌨️ Escribiendo LOAD ""...');
+                const canvas = getCanvas();
+                if (!canvas) { typing = false; return; }
+                canvas.focus();
+                await sleep(500);
+                pressKey('Enter', 'Enter', 13);
+                await sleep(400);
+                pressKey('j', 'KeyJ', 74);
+                await sleep(400);
+                await pressSymbolShift('p', 'KeyP', 80);
+                await sleep(300);
+                await pressSymbolShift('p', 'KeyP', 80);
+                await sleep(300);
+                pressKey('Enter', 'Enter', 13);
+                setStatus('▶ LOAD "" enviado. Espera a que cargue...');
+                typing = false;
+            }
+
+            async function loadGame() {
+                if (typeof speccy.reset === 'function') {
+                    try { speccy.reset(); } catch(e) {}
+                }
+                tapeLoaded = false;
+                await sleep(1500);
+                setStatus('Descargando pssst.tap...');
+                try {
+                    const r = await fetch('pssst.tap?t=' + Date.now());
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    const blob = await r.blob();
+                    await loadTape(blob, 'pssst.tap');
+                    await sleep(2000);
+                    await typeLoadCommand();
+                } catch (err) {
+                    setStatus('❌ Error: ' + err.message);
+                }
+            }
+
+            let tries = 0;
+            const interval = setInterval(() => {
+                tries++;
+                if (getCanvas()) {
+                    clearInterval(interval);
+                    const c = getCanvas();
+                    if (c) {
+                        c.setAttribute('tabindex', '0');
+                        c.addEventListener('click', () => c.focus());
+                        c.addEventListener('touchstart', () => c.focus(), { passive: true });
+                    }
+                    setTimeout(() => loadGame(), 800);
+                }
+                if (tries > 50) { clearInterval(interval); setStatus('⚠️ Canvas no detectado.'); }
+            }, 200);
+
+            manualLoadInput.addEventListener('change', async function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                setStatus('Insertando: ' + file.name);
+                const blob = file.slice(0, file.size, 'application/octet-stream');
+                await loadTape(blob, file.name);
+                await sleep(2000);
+                await typeLoadCommand();
+            });
+
+            // ============================================================
+            // MAPEO DE TECLAS DE PSSST
+            // Q = izquierda, W = derecha, R = arriba, E = abajo, T = fuego
+            // 5 = start
+            // ============================================================
+            const keyMap = {
+                'q': { key: 'q', code: 'KeyQ', keyCode: 81 },
+                'w': { key: 'w', code: 'KeyW', keyCode: 87 },
+                'e': { key: 'r', code: 'KeyR', keyCode: 82 },   // ↑ botón envía R
+                'r': { key: 'e', code: 'KeyE', keyCode: 69 },   // ↓ botón envía E
+                't': { key: 't', code: 'KeyT', keyCode: 84 },
+                '5': { key: '5', code: 'Digit5', keyCode: 53 },
+                'Enter': { key: 'Enter', code: 'Enter', keyCode: 13 }
+            };
+
+            function sendGamepadKey(keyName, isDown) {
+                const canvas = getCanvas();
+                if (!canvas) return;
+                canvas.focus();
+
+                const info = keyMap[keyName];
+                if (!info) {
+                    console.warn('[KEY] No keyMap para', keyName);
+                    return;
+                }
+
+                const eventType = isDown ? 'keydown' : 'keyup';
+                const evt = new KeyboardEvent(eventType, {
+                    key: info.key,
+                    code: info.code,
+                    keyCode: info.keyCode,
+                    which: info.keyCode,
+                    bubbles: true,
+                    cancelable: true
+                });
+                Object.defineProperty(evt, 'keyCode', { get: () => info.keyCode });
+                Object.defineProperty(evt, 'which', { get: () => info.keyCode });
+
+                canvas.dispatchEvent(evt);
+                document.dispatchEvent(evt);
+                window.dispatchEvent(evt);
+            }
+
+            document.querySelectorAll('.btn-half, .btn-action-round, #btn-start').forEach(btn => {
+                const key = btn.getAttribute('data-key');
+                if (!key) return;
+                let touchHandled = false;
+
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    touchHandled = true;
+                    btn.classList.add('active');
+                    sendGamepadKey(key, true);
+                }, { passive: false });
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    btn.classList.remove('active');
+                    sendGamepadKey(key, false);
+                    setTimeout(() => { touchHandled = false; }, 300);
+                }, { passive: false });
+                btn.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    btn.classList.remove('active');
+                    sendGamepadKey(key, false);
+                }, { passive: false });
+                btn.addEventListener('mousedown', (e) => {
+                    if (touchHandled) return;
+                    e.preventDefault();
+                    btn.classList.add('active');
+                    sendGamepadKey(key, true);
+                });
+                btn.addEventListener('mouseup', (e) => {
+                    if (touchHandled) return;
+                    e.preventDefault();
+                    btn.classList.remove('active');
+                    sendGamepadKey(key, false);
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.classList.remove('active');
+                });
+            });
+
+            window.addEventListener('contextmenu', e => e.preventDefault());
+            setTimeout(onOrientationChange, 800);
+        });
+    </script>
+</body>
+</html>
