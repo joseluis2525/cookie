@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
-    <title>Pssst - ZX Spectrum</title>
+    <title>Cookie - ZX Spectrum</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body {
@@ -23,19 +23,19 @@
         /* ============ CABECERA ============ */
         #game-header {
             text-align: center; padding: 4px 8px;
-            background: #111; border-bottom: 2px solid #4caf50;
+            background: #111; border-bottom: 2px solid #f0c040;
             display: flex; align-items: center; gap: 5px;
             flex-shrink: 0;
             z-index: 100;
         }
-        #game-header h1 { font-size: 0.9em; color: #4caf50; margin: 0; white-space: nowrap; }
+        #game-header h1 { font-size: 0.9em; color: #f0c040; margin: 0; white-space: nowrap; }
         #status { font-size: 0.6em; color: #aaa; flex: 1; text-align: center; }
         .hdr-btn {
-            background: #333; border: 1px solid #4caf50; border-radius: 5px;
-            color: #4caf50; padding: 5px 10px; font-size: 0.7em; cursor: pointer;
+            background: #333; border: 1px solid #f0c040; border-radius: 5px;
+            color: #f0c040; padding: 5px 10px; font-size: 0.7em; cursor: pointer;
             user-select: none; flex-shrink: 0; white-space: nowrap;
         }
-        .hdr-btn:active { background: #4caf50; color: #000; }
+        .hdr-btn:active { background: #f0c040; color: #000; }
 
         /* ============ EMULADOR ============ */
         #emulator-container {
@@ -262,7 +262,7 @@
     <div id="app">
 
         <div id="game-header">
-            <h1>🐛 Pssst</h1>
+            <h1>🍪 Cookie</h1>
             <div id="status">Iniciando...</div>
             <label for="manual-load" class="hdr-btn">ROM</label>
             <input type="file" id="manual-load" accept=".tap" style="display:none;">
@@ -286,9 +286,9 @@
 
             <div class="controls-right">
                 <div class="pill-vertical">
-                    <!-- ↑ arriba = R, ↓ abajo = E (intercambiado, como confirmamos) -->
-                    <div id="btn-up"   class="btn-half" data-key="e"></div>
-                    <div id="btn-down" class="btn-half" data-key="r"></div>
+                    <!-- ↑ arriba = R, ↓ abajo = E (mapeo estándar Cookie) -->
+                    <div id="btn-up"   class="btn-half" data-key="r"></div>
+                    <div id="btn-down" class="btn-half" data-key="e"></div>
                 </div>
                 <!-- ACCION = T (fuego) -->
                 <div id="btn-disp-right" class="btn-action-round" data-key="t"></div>
@@ -471,12 +471,12 @@
                 }
                 tapeLoaded = false;
                 await sleep(1500);
-                setStatus('Descargando pssst.tap...');
+                setStatus('Descargando Cookie.tap...');
                 try {
-                    const r = await fetch('pssst.tap?t=' + Date.now());
+                    const r = await fetch('Cookie.tap?t=' + Date.now());
                     if (!r.ok) throw new Error('HTTP ' + r.status);
                     const blob = await r.blob();
-                    await loadTape(blob, 'pssst.tap');
+                    await loadTape(blob, 'Cookie.tap');
                     await sleep(2000);
                     await typeLoadCommand();
                 } catch (err) {
@@ -511,15 +511,15 @@
             });
 
             // ============================================================
-            // MAPEO DE TECLAS DE PSSST
+            // MAPEO DE TECLAS DE COOKIE (1983)
             // Q = izquierda, W = derecha, R = arriba, E = abajo, T = fuego
             // 5 = start
             // ============================================================
             const keyMap = {
                 'q': { key: 'q', code: 'KeyQ', keyCode: 81 },
                 'w': { key: 'w', code: 'KeyW', keyCode: 87 },
-                'e': { key: 'r', code: 'KeyR', keyCode: 82 },   // ↑ botón envía R
-                'r': { key: 'e', code: 'KeyE', keyCode: 69 },   // ↓ botón envía E
+                'r': { key: 'r', code: 'KeyR', keyCode: 82 },   // ↑ botón envía R
+                'e': { key: 'e', code: 'KeyE', keyCode: 69 },   // ↓ botón envía E
                 't': { key: 't', code: 'KeyT', keyCode: 84 },
                 '5': { key: '5', code: 'Digit5', keyCode: 53 },
                 'Enter': { key: 'Enter', code: 'Enter', keyCode: 13 }
